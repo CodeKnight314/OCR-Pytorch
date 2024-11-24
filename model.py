@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class OCRModel(nn.Module):
-    def __init__(self, vocab_size: int, input_channels:int = 3, hidden_size:int = 256, num_layers:int = 2, dropout:float = 0.2, sequence_length: int = 32):
+    def __init__(self, vocab_size: int, input_channels:int = 3, hidden_size:int = 256, num_layers:int = 2, dropout:float = 0.2, sequence_length: int = 64):
         """
         Initializes the OCR Model with adjustable sequence length.
         
