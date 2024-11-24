@@ -19,7 +19,7 @@ class OCRDataset(Dataset):
         
         self.transform = T.Compose([T.Resize(size), T.ToTensor(), T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
         
-        df = pd.read_csv(self.csv)["labels"]
+        df = self.csv["labels"]
         all_characters = ''.join(df.astype(str))
         unique_characters = sorted(set(all_characters))
         
@@ -53,6 +53,13 @@ class OCRDataset(Dataset):
         return img, torch.tensor(encoded_label, dtype=torch.long)
     
 def collate_fn(batch):
+    """
+    Args:
+        batch (List[Tuple[torch.Tensor, torch.Tensor]]): Batch of samples from the dataset, each containing an image tensor and a label tensor.
+
+    Returns:
+        Tuple[torch.Tensor, torch.Tensor]: Tuple containing stacked image tensors and padded label tensors.
+    """
     images, labels = zip(*batch)
     
     max_len = max(len(label) for label in labels)
@@ -67,6 +74,15 @@ def collate_fn(batch):
 
 def load_dataset(root_dir: str, mode: str, csv: str, size: Tuple[int, int], batch_size: int):
     """
+    Args:
+        root_dir (str): Root directory containing the dataset.
+        mode (str): Mode of the dataset ('train' or 'val').
+        csv (str): Path to the CSV file containing image file names and their corresponding labels.
+        size (Tuple[int, int]): Tuple specifying the height and width for resizing images.
+        batch_size (int): Number of samples per batch.
+
+    Returns:
+        DataLoader: PyTorch DataLoader instance for loading the dataset with batching and shuffling.
     """
     ds = OCRDataset(root_dir, mode, csv, size)
     return DataLoader(ds, batch_size, shuffle=True, num_workers=os.cpu_count())
