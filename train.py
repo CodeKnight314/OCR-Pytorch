@@ -1,6 +1,6 @@
 from model import OCRModel
 from dataset import load_dataset, DataLoader
-from loss import OCRLoss
+from loss import OCRLoss, LevenShteinDistance
 import argparse
 import pandas as pd
 import torch
@@ -8,8 +8,42 @@ from tqdm import tqdm
 import torch.optim as opt
 import os
 import logging
+import numpy as np
 
-def train_OCR(model: OCRModel, criterion: OCRLoss, train_dl: DataLoader, val_dl: DataLoader, lr: float, epochs: int, save_dir: str):
+def decode_logits_output(prediction: torch.Tensor, idx2char: dict):
+    """
+    Args: 
+        prediction (torch.Tensor): Predicted logits tensor with shape [batch_size, seq_len, vocab_size] 
+    """
+    prediction = prediction.argmax(dim=-1)
+    batch_string = []
+    for sequence in prediction: 
+        text = ''.join(idx2char[idx] for idx in np.array(sequence))
+        text = ''.join(char for char in text if char != idx2char[-1])
+        batch_string.append(text)
+    return batch_string
+
+def decode_label(label: torch.Tensor, idx2char: dict): 
+    """
+    Args: 
+        label (torch.Tensor): Label tensor with shape [batch_size, max_len]
+    """
+    batch_string = [] 
+    for sequence in label: 
+        text = ''.join(idx2char[idx] for idx in np.array(sequence))
+        text = ''.join(char for char in text if char != idx2char[-1])
+        batch_string.append(text)
+    return batch_string
+
+def train_OCR(model: OCRModel, 
+              criterion: OCRLoss, 
+              train_dl: DataLoader, 
+              val_dl: DataLoader, 
+              lr: float, 
+              epochs: int, 
+              save_dir: str, 
+              char_dict: dict, 
+              idx_dict: dict):
     """
     Args:
         model (OCRModel): The OCR model to be trained.
@@ -48,6 +82,7 @@ def train_OCR(model: OCRModel, criterion: OCRLoss, train_dl: DataLoader, val_dl:
         logging.info(f"Epoch {epoch} - Training Loss: {avg_tr_loss:.4f}")
 
         total_val_loss = 0.0
+        total_lv_loss = 0.0
         model.eval()
         logging.info(f"Epoch {epoch}/{epochs} - Validation")
         for image, label in tqdm(val_dl, desc=f"Validation Epoch {epoch}"):
@@ -55,11 +90,20 @@ def train_OCR(model: OCRModel, criterion: OCRLoss, train_dl: DataLoader, val_dl:
 
             with torch.no_grad():
                 prediction = model(image)
+            
+            pred_ls = decode_logits_output(prediction, idx_dict)
+            grth_ls = decode_label(label, idx_dict)
+            
+            levn_dis = [] 
+            for pred, grth in zip(pred_ls, grth_ls): 
+                levn_dis.append(LevenShteinDistance(pred, grth))
+            total_lv_loss += sum(levn_dis)/len(levn_dis)
 
             loss = criterion(prediction, label)
             total_val_loss += loss.item()
 
         avg_val_loss = total_val_loss / len(val_dl)
+        avg_lev_loss = total_lv_loss / len(val_dl)
         logging.info(f"Epoch {epoch} - Validation Loss: {avg_val_loss:.4f}")
 
         scheduler.step()
@@ -75,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--csv", type=str, required=True, help="Path to the CSV file containing labels")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs")
-    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--save_dir", type=str, default="checkpoints/", help="Directory to save model checkpoints")
     
     args = parser.parse_args()
@@ -85,12 +129,21 @@ if __name__ == "__main__":
     train_dl = load_dataset(root_dir=args.root, mode="train", csv=args.csv, size=(64, 128), batch_size=args.batch_size)
     val_dl = load_dataset(root_dir=args.root, mode="val", csv=args.csv, size=(64, 128), batch_size=args.batch_size)
 
-    df = pd.read_csv(args.csv)["labels"]
+    df = pd.read_csv(args.csv)
+    df = df["labels"]
     all_characters = ''.join(df.astype(str))
-    unique_characters = set(all_characters)
+    unique_characters = sorted(set(all_characters))
+    
+    blank_character = ''
+    if blank_character in unique_characters:
+        unique_characters.remove(blank_character)
+    unique_characters.append(blank_character)
+    
+    char_dict = {char: idx for idx, char in enumerate(unique_characters)}
+    idx_dict = {idx: char for idx, char in enumerate(unique_characters)}
 
-    model = OCRModel(vocab_size=len(unique_characters))
-    criterion = OCRLoss(blank=len(unique_characters)-1, pad=0, ctc_weight=1.0)
+    model = OCRModel(vocab_size=len(char_dict))
+    criterion = OCRLoss(blank=len(char_dict)-1, pad=-1, ctc_weight=1.0)
 
     train_OCR(
         model=model,
@@ -99,5 +152,7 @@ if __name__ == "__main__":
         val_dl=val_dl,
         lr=args.lr,
         epochs=args.epochs,
-        save_dir=args.save_dir
+        save_dir=args.save_dir,
+        char_dict=char_dict, 
+        idx_dict=idx_dict
     )
