@@ -63,10 +63,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train an OCR model")
     parser.add_argument("--root", type=str, required=True, help="Root directory for the dataset")
     parser.add_argument("--csv", type=str, required=True, help="Path to the CSV file containing labels")
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
-    parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save model checkpoints")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument("--save_dir", type=str, default="checkpoints/", help="Directory to save model checkpoints")
     
     args = parser.parse_args()
 
