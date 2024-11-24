@@ -8,6 +8,7 @@ class OCRLoss(nn.Module):
         
         self.ctc_weight = ctc_weight
         self.ctc_loss = nn.CTCLoss(blank=blank, reduction="mean", zero_infinity=True)
+        self.pad = pad
         
     def compute_CTC_Loss(self, prediction: torch.Tensor, targets: torch.Tensor, pred_len: torch.Tensor, target_len: torch.Tensor):
         """
@@ -41,9 +42,32 @@ class OCRLoss(nn.Module):
             size=(batch_size,), fill_value=seq_len, dtype=torch.long, device=prediction.device
         )
 
-        target_length = torch.sum(targets != 0, dim=1)
+        target_length = torch.sum(targets != self.pad, dim=1)
 
         return self.ctc_weight * self.compute_CTC_Loss(prediction, targets, prediction_length, target_length)
+    
+def LevenShteinDistance(prediction: str, ground_truth: str):
+    m = len(prediction)
+    n = len(ground_truth)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if prediction[i - 1] == ground_truth[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = min(
+                    dp[i - 1][j] + 1,  # deletion
+                    dp[i][j - 1] + 1,  # insertion
+                    dp[i - 1][j - 1] + 1  # substitution
+                )
+
+    return dp[m][n]
 
 if __name__ == "__main__": 
     batch_size = 16
