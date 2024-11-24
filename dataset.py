@@ -63,7 +63,7 @@ def collate_fn(batch):
     images, labels = zip(*batch)
     
     max_len = max(len(label) for label in labels)
-    padded_labels = torch.zeros((len(labels), max_len), dtype=torch.long)
+    padded_labels = torch.full((len(labels), max_len), fill_value = -1, dtype=torch.long)
     
     for i, label in enumerate(labels):
         padded_labels[i, :len(label)] = label
