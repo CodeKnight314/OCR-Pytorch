@@ -10,11 +10,21 @@ import os
 import logging
 
 def train_OCR(model: OCRModel, criterion: OCRLoss, train_dl: DataLoader, val_dl: DataLoader, lr: float, epochs: int, save_dir: str):
+    """
+    Args:
+        model (OCRModel): The OCR model to be trained.
+        criterion (OCRLoss): Loss function to optimize the model.
+        train_dl (DataLoader): DataLoader for the training dataset.
+        val_dl (DataLoader): DataLoader for the validation dataset.
+        lr (float): Learning rate for the optimizer.
+        epochs (int): Number of epochs for training.
+        save_dir (str): Directory path to save model checkpoints.
+    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model.to(device)
     optimizer = opt.AdamW(model.parameters(), lr=lr)
-    scheduler = opt.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=epochs, eta_min=lr * 0.01)
+    scheduler = opt.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=int(epochs * 0.75), eta_min=lr * 0.01)
 
     logging.info(f"Training started on {device}")
 
@@ -64,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("--root", type=str, required=True, help="Root directory for the dataset")
     parser.add_argument("--csv", type=str, required=True, help="Path to the CSV file containing labels")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
     parser.add_argument("--save_dir", type=str, default="checkpoints/", help="Directory to save model checkpoints")
     
@@ -80,7 +90,7 @@ if __name__ == "__main__":
     unique_characters = set(all_characters)
 
     model = OCRModel(vocab_size=len(unique_characters))
-    criterion = OCRLoss(blank=len(unique_characters), pad=0, ctc_weight=1.0)
+    criterion = OCRLoss(blank=len(unique_characters)-1, pad=0, ctc_weight=1.0)
 
     train_OCR(
         model=model,
