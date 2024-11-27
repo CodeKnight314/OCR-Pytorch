@@ -130,20 +130,14 @@ if __name__ == "__main__":
     val_dl = load_dataset(root_dir=args.root, mode="val", csv=args.csv, size=(64, 128), batch_size=args.batch_size)
 
     df = pd.read_csv(args.csv)
-    df = df["labels"]
-    all_characters = ''.join(df.astype(str))
-    unique_characters = sorted(set(all_characters))
+    all_chars = ''.join(df["labels"].astype(str))
+    unique_chars = sorted(set(all_chars))
     
-    blank_character = ''
-    if blank_character in unique_characters:
-        unique_characters.remove(blank_character)
-    unique_characters.append(blank_character)
-    
-    char_dict = {char: idx for idx, char in enumerate(unique_characters)}
-    idx_dict = {idx: char for idx, char in enumerate(unique_characters)}
+    char_dict = {'<blank>': 0, **{c: i+1 for i, c in enumerate(unique_chars)}}
+    idx_dict = {v: k for k, v in char_dict.items()}
 
     model = OCRModel(vocab_size=len(char_dict))
-    criterion = OCRLoss(blank=len(char_dict)-1, pad=-1, ctc_weight=1.0)
+    criterion = OCRLoss(blank=0, pad=-1, ctc_weight=1.0)
 
     train_OCR(
         model=model,
