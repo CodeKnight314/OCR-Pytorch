@@ -9,6 +9,7 @@ import torch.optim as opt
 import os
 import logging
 import numpy as np
+import json
 
 def decode_logits_output(prediction: torch.Tensor, idx2char: dict):
     """
@@ -58,7 +59,7 @@ def train_OCR(model: OCRModel,
 
     model.to(device)
     optimizer = opt.AdamW(model.parameters(), lr=lr)
-    scheduler = opt.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=epochs, eta_min=lr * 0.01)
+    scheduler = opt.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=int(epochs * 0.75), eta_min=lr * 0.01)
 
     logging.info(f"Training started on {device}")
 
@@ -105,6 +106,7 @@ def train_OCR(model: OCRModel,
         avg_val_loss = total_val_loss / len(val_dl)
         avg_lev_loss = total_lv_loss / len(val_dl)
         logging.info(f"Epoch {epoch} - Validation Loss: {avg_val_loss:.4f}")
+        logging.info(f"Epoch {epoch} - Levenshtein Loss: {avg_lev_loss:4f}")
 
         scheduler.step()
 
@@ -135,6 +137,9 @@ if __name__ == "__main__":
     
     char_dict = {'<blank>': 0, **{c: i+1 for i, c in enumerate(unique_chars)}}
     idx_dict = {v: k for k, v in char_dict.items()}
+
+    with open('char_idx_dicts.json', 'w') as f:
+        json.dump({'char_dict': char_dict, 'idx_dict': idx_dict}, f)
 
     model = OCRModel(vocab_size=len(char_dict))
     criterion = OCRLoss(blank=0, pad=-1, ctc_weight=1.0)
