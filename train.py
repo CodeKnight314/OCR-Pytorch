@@ -18,8 +18,8 @@ def decode_logits_output(prediction: torch.Tensor, idx2char: dict):
     prediction = prediction.argmax(dim=-1)
     batch_string = []
     for sequence in prediction: 
-        text = ''.join(idx2char[idx] for idx in np.array(sequence))
-        text = ''.join(char for char in text if char != idx2char[-1])
+        text = ''.join(idx2char[idx] for idx in np.array(sequence.cpu()))
+        text = ''.join(char for char in text if char != idx2char[0])
         batch_string.append(text)
     return batch_string
 
@@ -30,8 +30,8 @@ def decode_label(label: torch.Tensor, idx2char: dict):
     """
     batch_string = [] 
     for sequence in label: 
-        text = ''.join(idx2char[idx] for idx in np.array(sequence))
-        text = ''.join(char for char in text if char != idx2char[-1])
+        text = ''.join(idx2char[idx] for idx in np.array(sequence.cpu()))
+        text = ''.join(char for char in text if char != idx2char[0])
         batch_string.append(text)
     return batch_string
 
@@ -58,7 +58,7 @@ def train_OCR(model: OCRModel,
 
     model.to(device)
     optimizer = opt.AdamW(model.parameters(), lr=lr)
-    scheduler = opt.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=int(epochs * 0.75), eta_min=lr * 0.01)
+    scheduler = opt.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=epochs, eta_min=lr * 0.01)
 
     logging.info(f"Training started on {device}")
 
