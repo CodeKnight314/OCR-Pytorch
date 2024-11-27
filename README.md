@@ -6,29 +6,18 @@ This is an educational repository for Optical Character Recognition with light-w
 ## Results
 Majority of predicted text are successfull in completely predicting the characters of the given image. However, when predictions fail, predicted texts are fairly close and would liekly be more robust with image denoising as preprocessing. Some images were also incorrectly cropped or too low in resolution and influenced testing to a degree
 
-<p align="center">
-  <img src="img/351.jpg.png" alt="Successful OCR result", width="320" height="240">
-</p>
-
-<p align="center">
-  <img src="img/418.jpg.png" alt="Successful OCR result", width="320" height="240">
-</p>
-
-<p align="center">
-  <img src="img/541.jpg.png" alt="Successful OCR result", width="320" height="240">
-</p>
-
-<p align="center">
-  <img src="img/85.jpg.png" alt="Unsuccessful OCR result", width="320" height="240">
-</p>
-
-<p align="center">
-  <img src="img/579.jpg.png" alt="Low Resolution Input", width="320" height="240">
-</p>
-
-<p align="center">
-  <img src="img/1015.jpg.png" alt="Invalid crop input", width="320" height="240">
-</p>
+<table>
+  <tr>
+    <td><img src="img/351.jpg.png" alt="Successful OCR result", width="320" height="240"></td>
+    <td><img src="img/418.jpg.png" alt="Successful OCR result", width="320" height="240"></td>
+    <td><img src="img/541.jpg.png" alt="Successful OCR result", width="320" height="240"></td>
+  </tr>
+  <tr>
+    <td><img src="img/85.jpg.png" alt="Unsuccessful OCR result", width="320" height="240"></td>
+    <td><img src="img/579.jpg.png" alt="Low Resolution Input", width="320" height="240"></td>
+    <td><img src="img/1015.jpg.png" alt="Invalid crop input", width="320" height="240"></td>
+  </tr>
+</table>
 
 ## Table of Contents
 - [Results](#results)
