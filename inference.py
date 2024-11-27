@@ -18,8 +18,8 @@ def decode_logits_output(prediction: torch.Tensor, idx2char: dict):
     prediction = prediction.argmax(dim=-1)
     batch_string = []
     for sequence in prediction:
-        text = ''.join(idx2char[idx] for idx in np.array(sequence.cpu()))
-        text = ''.join(char for char in text if char != idx2char[0])
+        text = ''.join(idx2char[str(idx)] for idx in np.array(sequence.cpu()))
+        text = ''.join(char for char in text if char != idx2char[str(0)])
         batch_string.append(text)
     return batch_string
 
@@ -27,7 +27,8 @@ def inference(model: OCRModel, char_dict: dict, idx_dict: dict, img_dir: str, ou
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model.eval()
-    img_directory = glob(os.path.join(img_dir, "*.png"))
+    model = model.to(device)
+    img_directory = glob(os.path.join(img_dir, "*"))
     transforms = T.Compose([T.Resize((64, 128)), T.ToTensor()])
 
     for img_path in tqdm(img_directory):
@@ -35,7 +36,7 @@ def inference(model: OCRModel, char_dict: dict, idx_dict: dict, img_dir: str, ou
         img_tensor = transforms(img).to(device)
 
         with torch.no_grad():
-            prediction = model(img_tensor.unsqueeze()).squeeze()
+            prediction = model(img_tensor.unsqueeze(0)).squeeze(0)
 
         text = decode_logits_output(prediction.unsqueeze(0), idx_dict)[0]
 
@@ -68,5 +69,3 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(args.weight, weights_only=True))
     
     inference(model, char_dict, idx_dict, args.dir, args.output)
-    
-    
