@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class OCRModel(nn.Module):
-    def __init__(self, vocab_size: int, input_channels:int = 3, hidden_size:int = 256, num_layers:int = 2, dropout:float = 0.2, sequence_length: int = 64):
+    def __init__(self, vocab_size: int, input_channels:int = 3, hidden_size:int = 256, num_layers:int = 2, dropout:float = 0.2, sequence_length: int = 6):
         """
         Initializes the OCR Model with adjustable sequence length.
         
@@ -22,30 +22,21 @@ class OCRModel(nn.Module):
 
         # Feature extractor
         self.feature_extractor = nn.Sequential(
-            nn.Conv2d(input_channels, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(input_channels, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(4, 2), stride=(4, 2)),
-            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1)),
-            nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.MaxPool2d((2, 1)),
         )
 
-        self.adaptive_pool = None
-        if sequence_length is not None:
-            self.adaptive_pool = nn.AdaptiveAvgPool2d((1, sequence_length))
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((1, sequence_length))
 
         self.lstm = nn.LSTM(
-            input_size=512,
+            input_size=128,
             hidden_size=hidden_size,
             num_layers=num_layers,
             dropout=dropout,
