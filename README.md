@@ -4,7 +4,7 @@
 This is an educational repository for Optical Character Recognition with light-weight CNN-LSTM model. The input is assumed to be cropped license plates sourced from object-detection network outputs. Images are resized to 64 by 128 for standardization. With the current model and without noise removal or preprocessing techniques, it achieves a 0.24 CTC Loss and 0.53 Levenshtein average distance. 
 
 ## Results
-Majority of predicted text are successfull in completely predicting the characters of the given image. However, when predictions fail, predicted texts are fairly close and would liekly be more robust with image denoising as preprocessing. Some images were also incorrectly cropped or too low in resolution and influenced testing to a degree
+Majority of predicted text are successfull in completely predicting the characters of the given image. However, when predictions fail, predicted texts are fairly close and would likely be more robust with image denoising as preprocessing. Some images were also incorrectly cropped or too low in resolution and influenced testing results unfairly.
 
 <table>
   <tr>
